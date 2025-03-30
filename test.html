@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI API Test</title>
+</head>
+<body>
+  <h2>Ask the AI</h2>
+  <form id="queryForm">
+    <label>Question:<br>
+      <input type="text" id="queryInput" name="query" size="60" required>
+    </label><br><br>
+    
+    <label>Persona ID:<br>
+      <input type="text" id="personaInput" name="persona_id" value="Adam" required>
+    </label><br><br>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <h3>Response:</h3>
+  <pre id="responseBox"></pre>
+
+  <script>
+    const form = document.getElementById('queryForm');
+    const responseBox = document.getElementById('responseBox');
+  
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+  
+      const query = document.getElementById('queryInput').value;
+      const persona_id = document.getElementById('personaInput').value;
+  
+      try {
+        const res = await fetch('https://api-solitary-sun-3405-production.up.railway.app/api/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query, persona_id })
+      });
+
+  
+        const data = await res.json();
+        responseBox.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        responseBox.textContent = 'Error: ' + err.message;
+      }
+    });
+  </script>
+  
+</body>
+</html>

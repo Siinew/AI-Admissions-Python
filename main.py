@@ -1,8 +1,10 @@
 from fastapi import FastAPI, Request
 from dotenv import load_dotenv
 from supabase import create_client
+from fastapi.middleware.cors import CORSMiddleware
 import openai
 import os
+
 
 # Load .env variables
 load_dotenv()
@@ -15,6 +17,15 @@ supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 openai.api_key = OPENAI_API_KEY
 
 app = FastAPI()
+
+# Allow cross-origin requests from any origin (for development)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # <-- You can lock this down later
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/api/query")
 async def query(request: Request):

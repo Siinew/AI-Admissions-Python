@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<!-- saved from url=(0056)file:///C:/Programming/AI%20-%20WFA%20Project/index.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <title>Top Wilderness and Austere Medicine Education in the USA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    #mapContainer {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background-image: url('homePageBackground.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-color: black;
+    }
+
+    .villageLabel {
+      position: absolute;
+      color: white;
+      background: rgba(0,0,0,0.6);
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transform: translate(-50%, -50%);
+      transition: opacity 0.2s ease;
+    }
+
+    .villageLabel:hover {
+      opacity: 0.85;
+    }
+
+    /* Popup box */
+    #aiPopup {
+      position: absolute;
+      display: none;
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 300px;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+<div id="mapContainer">
+  <!-- Labels positioned with percentages -->
+  <div id="austereVillage" class="villageLabel" style="top: 30%; left: 65%;">Austere Medicine Program</div>
+  <div id="wfrVillage" class="villageLabel" style="top: 45%; left: 60%;">WFR Certification</div>
+  <div id="awfaVillage" class="villageLabel" style="top: 70%; left: 35%;">Advanced WFA Certification</div>
+  <div id="wfaVillage" class="villageLabel" style="top: 70%; left: 70%;">WFA Certification</div>
+
+  <!-- AI popup -->
+  <div id="aiPopup" style="display: none; left: 582.675px; top: 155.15px;">Welcome to Austere Medicine Program! Click to explore.</div>
+</div>
+
+<script>
+  const popup = document.getElementById('aiPopup');
+
+  const showPopup = (event, message) => {
+    const rect = event.target.getBoundingClientRect();
+    popup.style.display = 'block';
+    popup.textContent = message;
+    popup.style.left = `${rect.left + rect.width / 2 - popup.offsetWidth / 2}px`;
+    popup.style.top = `${rect.top - popup.offsetHeight - 10}px`;
+  };
+
+  const hidePopup = () => {
+    popup.style.display = 'none';
+  };
+
+  document.querySelectorAll('.villageLabel').forEach(village => {
+  village.addEventListener('mouseover', (e) => {
+    showPopup(e, `Welcome to ${village.textContent}! Click to explore.`);
+  });
+
+  village.addEventListener('mouseout', hidePopup);
+
+  village.addEventListener('click', () => {
+    // You can route to different pages or open modals based on the ID
+    const villageId = village.id;
+
+    if (villageId === 'wfaVillage') {
+      window.location.href = 'wfa.html';
+    } else if (villageId === 'awfaVillage') {
+      window.location.href = 'awfa.html';
+    } else if (villageId === 'austereVillage') {
+      window.location.href = 'austere.html';
+    } else if (villageId === 'wfrVillage') {
+      window.location.href = 'wfr.html';
+    }
+  });
+});
+ 
+</script>
+
+
+
+</body></html>
