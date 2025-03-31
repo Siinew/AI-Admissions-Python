@@ -33,36 +33,44 @@ async def query(request: Request):
     query_text = body.get("query")
     persona_id = body.get("persona_id", "default")
 
-    # 1. Fetch persona info
-    persona = supabase.table("ai_personas").select("*").eq("persona_id", persona_id).single().execute().data
+    # 1. Fetch global HMA system prefix
+    global_prefix_response = supabase.table("ai_system_settings").select("value").eq("key", "global_system_prefix").single().execute()
+    global_prefix = global_prefix_response.data.get("value", "") if global_prefix_response.data else ""
+
+    # 2. Fetch persona info
+    persona_response = supabase.table("ai_personas").select("*").eq("persona_id", persona_id).single().execute()
+    persona = persona_response.data
     if not persona:
         return {"error": f"Persona '{persona_id}' not found."}
-    system_prompt = persona["system_prompt"]
 
-    # 2. Embed query
+    # Combine global prefix and persona's system prompt
+    full_system_prompt = f"{global_prefix}\n\n{persona['system_prompt']}"
+
+    # 3. Embed query
     embedding_response = openai.embeddings.create(
         model="text-embedding-3-small",
         input=query_text
     )
     query_embedding = embedding_response.data[0].embedding
 
-    # 3. Run match on Supabase using RPC
+    # 4. Query top 3 similar chunks using Supabase RPC
     match_result = supabase.rpc("match_ai_admissions_trainingdata", {
         "query_embedding": query_embedding,
         "match_count": 3
     }).execute()
-    
+
     if not match_result.data:
         return {"error": "No similar content found."}
 
     context_chunks = "\n\n".join([match["text"] for match in match_result.data])
 
-    # 4. Call OpenAI with context
+    # 5. Build final messages for OpenAI
     messages = [
-        {"role": "system", "content": system_prompt},
+        {"role": "system", "content": full_system_prompt},
         {"role": "user", "content": f"Context:\n{context_chunks}\n\nQuestion: {query_text}"}
     ]
 
+    # 6. Run chat completion
     chat_response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=messages
