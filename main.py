@@ -37,14 +37,18 @@ async def query(request: Request):
     global_prefix_response = supabase.table("ai_system_settings").select("value").eq("key", "global_system_prefix").single().execute()
     global_prefix = global_prefix_response.data.get("value", "") if global_prefix_response.data else ""
 
-    # 2. Fetch persona info
-    persona_response = supabase.table("ai_personas").select("*").eq("persona_id", persona_id).single().execute()
-    persona = persona_response.data
-    if not persona:
-        return {"error": f"Persona '{persona_id}' not found."}
+  # 2. Fetch persona + global prefix using Supabase RPC
+    response = supabase.rpc("get_persona_with_global", {
+        "persona_id_input": persona_id
+    }).execute()
 
-    # Combine global prefix and persona's system prompt
-    full_system_prompt = f"{global_prefix}\n\n{persona['system_prompt']}"
+    if not response.data or len(response.data) == 0:
+        return {"error": f"Persona '{persona_id}' not found or global prefix missing."}
+
+    combined = response.data[0]
+
+    # Compose final system prompt with global brand prefix + persona behavior
+    full_system_prompt = f"{combined['global_prefix']}\n\n{combined['system_prompt']}"
 
     # 3. Embed query
     embedding_response = openai.embeddings.create(
