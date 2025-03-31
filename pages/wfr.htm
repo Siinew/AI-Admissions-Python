@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WFA Admissions Counselor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; width: 100%; font-family: Arial, sans-serif; overflow: hidden; }
+
+    #page {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background-image: url('../images/wfrCampsiteWithAvatar.png');
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+    }
+
+    #aiCharacter {
+      position: absolute;
+      bottom: 0;
+      left: 5%;
+      height: 60vh;
+      z-index: 1;
+    }
+
+    #chatContainer {
+      position: absolute;
+      bottom: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80vw;
+      max-width: 500px;
+      max-height: 75vh;
+      padding: 15px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.75);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      z-index: 3;
+    }
+
+    #chatContainer .ai a {
+      color: #4FC3F7;
+      text-decoration: underline;
+    }
+
+    #chatContainer .ai a:hover {
+      color: #81D4FA;
+      text-decoration: none;
+    }
+
+    #chatLog { flex: 1; overflow-y: auto; margin-bottom: 10px; }
+    .message { margin-bottom: 10px; }
+    .ai { text-align: left; color: #a4d4ff; }
+    .user { text-align: right; color: #d1ffd1; }
+
+    #suggestions { margin-bottom: 10px; }
+    .suggestion {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 5px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 4px 0;
+      font-size: 0.9rem;
+    }
+    .suggestion:hover { background: rgba(255, 255, 255, 0.25); }
+
+    #userInputContainer { display: flex; gap: 5px; }
+    #userInput {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 6px;
+    }
+
+    #sendBtn {
+      padding: 8px 12px;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #sendBtn:hover { background: #45a049; }
+  </style>
+</head>
+<body>
+
+<div id="page">
+  <div id="aiAvatar" title="I'm your AI Admissions Counselor!"></div>
+
+  <div id="chatContainer">
+    <div id="chatLog">
+      <div class="message ai">Hi there! I'm your AI Admissions Counselor for our Wilderness Courses at 
+        <a href="https://herbalmedics.academy" target="_blank"> Herbal Medics Academy</a>. 😊</div>
+      <div class="message ai">How can I help you today?</div>
+    </div>
+
+    <div id="suggestions">
+      <div class="suggestion">What’s the difference between WFA and AWFA?</div>
+      <div class="suggestion">How do I sign up for a course?</div>
+      <div class="suggestion">Can you compare WFA vs WFR visually?</div>
+      <div class="suggestion">Is this course right for me?</div>
+    </div>
+
+    <div id="userInputContainer">
+      <input type="text" id="userInput" placeholder="Or type your own question..." />
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const chatLog = document.getElementById('chatLog');
+  const userInput = document.getElementById('userInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const suggestions = document.querySelectorAll('.suggestion');
+
+  const API_URL = 'https://ai-admissions-python-production.up.railway.app/api/query';
+  const PERSONA_ID = 'Adam'; // Update as needed
+
+  function addMessage(text, sender) {
+    const msg = document.createElement('div');
+    msg.className = 'message ' + sender;
+    msg.innerText = text;
+    chatLog.appendChild(msg);
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+
+  async function handleUserMessage(text) {
+    if (!text.trim()) return;
+
+    addMessage(text, 'user');
+    userInput.value = '';
+    addMessage("Thinking...", 'ai');
+
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: text,
+          persona_id: PERSONA_ID
+        })
+      });
+
+      const data = await response.json();
+      const messages = chatLog.querySelectorAll('.ai');
+      if (messages.length > 0) {
+        messages[messages.length - 1].remove(); // Remove "Thinking..." line
+      }
+
+      if (data.response) {
+        addMessage(data.response, 'ai');
+      } else {
+        addMessage(data.error || "Sorry, something went wrong.", 'ai');
+      }
+    } catch (err) {
+      addMessage("Fetch error: "  + err.message, 'ai');
+    }
+  }
+
+  sendBtn.addEventListener('click', () => handleUserMessage(userInput.value));
+  userInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleUserMessage(userInput.value);
+  });
+
+  suggestions.forEach(suggestion => {
+    suggestion.addEventListener('click', () => {
+      handleUserMessage(suggestion.textContent);
+    });
+  });
+</script>
+
+</body>
+</html>
