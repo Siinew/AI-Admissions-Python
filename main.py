@@ -34,8 +34,14 @@ async def query(request: Request):
     persona_id = body.get("persona_id", "default")
 
     # 1. Fetch global HMA system prefix
-    global_prefix_response = supabase.table("ai_system_settings").select("value").eq("key", "global_system_prefix").single().execute()
-    global_prefix = global_prefix_response.data.get("value", "") if global_prefix_response.data else ""
+    global_prefix_response = supabase.table("ai_system_settings") \
+        .select("setting_value") \
+        .eq("setting_key", "global_system_prefix") \
+        .single() \
+        .execute()
+
+    global_prefix = global_prefix_response.data.get("setting_value", "") if global_prefix_response.data else ""
+
 
   # 2. Fetch persona + global prefix using Supabase RPC
     response = supabase.rpc("get_persona_with_global", {
