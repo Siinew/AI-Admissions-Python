@@ -1,1 +1,4 @@
 .env
+cleaned_wfa_faqs.json
+cleaned_wfa_faqs2.json
+faq_embeddings.py
