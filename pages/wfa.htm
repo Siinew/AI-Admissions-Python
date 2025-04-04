@@ -156,11 +156,19 @@
         messages[messages.length - 1].remove(); // Remove "Thinking..." line
       }
 
+      // Remove all previous AI messages except the first two (greetings)
+      const allMessages = chatLog.querySelectorAll('.message.ai');
+      allMessages.forEach((msg, index) => {
+        if (index >= 2) msg.remove();
+      });
+
+      // Add the new AI response
       if (data.response) {
         addMessage(data.response, 'ai');
       } else {
         addMessage(data.error || "Sorry, something went wrong.", 'ai');
       }
+
     } catch (err) {
       addMessage("Fetch error: "  + err.message, 'ai');
     }
