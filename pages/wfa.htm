@@ -128,7 +128,7 @@
   function addMessage(text, sender) {
     const msg = document.createElement('div');
     msg.className = 'message ' + sender;
-    msg.innerText = text;
+    msg.innerHTML = text;
     chatLog.appendChild(msg);
     chatLog.scrollTop = chatLog.scrollHeight;
   }
