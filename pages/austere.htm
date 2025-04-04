@@ -32,8 +32,8 @@
       bottom: 10%;
       left: 50%;
       transform: translateX(-50%);
-      width: 80vw;
-      max-width: 500px;
+      width: 90vw;
+      max-width: 700px;
       max-height: 75vh;
       padding: 15px;
       border-radius: 12px;
@@ -87,6 +87,23 @@
       cursor: pointer;
     }
 
+    .message ul,
+    .message ol {
+      padding-left: 20px;
+      margin-bottom: 10px;
+    }
+
+    .message li {
+      margin-left: 10px;
+      margin-bottom: 4px;
+    }
+
+    .fade-out {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    }
+
+
     #sendBtn:hover { background: #45a049; }
   </style>
 </head>
@@ -128,51 +145,62 @@
   function addMessage(text, sender) {
     const msg = document.createElement('div');
     msg.className = 'message ' + sender;
-    msg.innerText = text;
+    msg.innerHTML = text;
     chatLog.appendChild(msg);
     chatLog.scrollTop = chatLog.scrollHeight;
   }
 
   async function handleUserMessage(text) {
-    if (!text.trim()) return;
+  if (!text.trim()) return;
 
-    addMessage(text, 'user');
-    userInput.value = '';
-    addMessage("Thinking...", 'ai');
+  const keepHistory = document.getElementById('chatHistoryToggle').checked;
 
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: text,
-          persona_id: PERSONA_ID
-        })
-      });
+  addMessage(text, 'user');
+  userInput.value = '';
+  addMessage("Thinking...", 'ai');
 
-      const data = await response.json();
-      const messages = chatLog.querySelectorAll('.ai');
-      if (messages.length > 0) {
-        messages[messages.length - 1].remove(); // Remove "Thinking..." line
-      }
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: text,
+        persona_id: PERSONA_ID
+      })
+    });
 
-      // Remove all previous AI messages except the first two (greetings)
-      const allMessages = chatLog.querySelectorAll('.message.ai');
-      allMessages.forEach((msg, index) => {
-        if (index >= 2) msg.remove();
-      });
+    const data = await response.json();
+    const messages = chatLog.querySelectorAll('.ai');
 
-      // Add the new AI response
-      if (data.response) {
-        addMessage(data.response, 'ai');
-      } else {
-        addMessage(data.error || "Sorry, something went wrong.", 'ai');
-      }
-
-    } catch (err) {
-      addMessage("Fetch error: "  + err.message, 'ai');
+    if (messages.length > 0) {
+      messages[messages.length - 1].remove(); // Remove "Thinking..."
     }
+
+    if (!keepHistory) {
+      const allMessages = chatLog.querySelectorAll('.message.ai, .message.user');
+      allMessages.forEach((msg, index) => {
+        if (index >= 2) {
+          msg.classList.add('fade-out');
+          setTimeout(() => msg.remove(), 500); // Wait for fade to finish
+        }
+      });
+    }
+
+    if (data.response) {
+      const newMessage = document.createElement('div');
+      newMessage.className = 'message ai';
+      newMessage.innerHTML = data.response;
+      chatLog.appendChild(newMessage);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    } else {
+      addMessage(data.error || "Sorry, something went wrong.", 'ai');
+    }
+
+  } catch (err) {
+    addMessage("Fetch error: " + err.message, 'ai');
   }
+}
+
 
   sendBtn.addEventListener('click', () => handleUserMessage(userInput.value));
   userInput.addEventListener('keypress', (e) => {
