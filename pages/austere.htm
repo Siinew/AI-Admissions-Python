@@ -150,12 +150,30 @@
   const PERSONA_ID = 'Adam'; // Update as needed
 
   function addMessage(text, sender) {
-    const msg = document.createElement('div');
-    msg.className = 'message ' + sender;
-    msg.innerHTML = text;
-    chatLog.appendChild(msg);
-    chatLog.scrollTop = chatLog.scrollHeight;
+  const isMobile = window.innerWidth <= 768; // Adjust for your mobile breakpoint
+
+  const msg = document.createElement('div');
+  msg.className = 'message ' + sender;
+
+  if (sender === 'ai' && isMobile) {
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = "Tap to view answer";
+    details.appendChild(summary);
+
+    const content = document.createElement('div');
+    content.innerHTML = text;
+    details.appendChild(content);
+
+    msg.appendChild(details);
+  } else {
+    msg.innerHTML = text; // Use innerHTML for formatted bullets/tables
   }
+
+  chatLog.appendChild(msg);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
 
   async function handleUserMessage(text) {
   if (!text.trim()) return;
