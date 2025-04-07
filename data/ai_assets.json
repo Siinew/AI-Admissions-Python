@@ -1,0 +1,33 @@
+{
+  "wfa_slides": {
+    "type": "slideshow",
+    "slides": [
+      {
+        "src": "../images/testImage1.png",
+        "caption": "Splinting a leg during field training in the forest"
+      },
+      {
+        "src": "../images/testImage2.jpg",
+        "caption": "Contents of a well-stocked herbal first aid kit"
+      },
+      {
+        "src": "../images/testImage3.jpg",
+        "caption": "Student managing shock with emergency blanket"
+      }
+    ]
+  },
+  "wfa_video": {
+    "type": "video",    
+    "src": "../videos/ShortAITest.mp4",
+    "caption": "Intro to WFA Training – Herbal Medics Academy"
+  },
+  "wfa_syllabus": {
+    "type": "syllabus",
+    "text": [
+      "🌿 Week 1: Foundations of Herbal First Aid",
+      "🧭 Week 2: Wilderness Assessment Techniques",
+      "🛠️ Week 3: Hands-on Field Scenarios & Extraction",
+      "🚑 Week 4: Austere Trauma Management & Improvised Gear"
+    ]
+  }
+}

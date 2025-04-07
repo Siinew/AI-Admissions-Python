@@ -4,116 +4,51 @@
   <meta charset="UTF-8">
   <title>WFA Admissions Counselor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100%; width: 100%; font-family: Arial, sans-serif; overflow: hidden; }
-
-    #page {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      background-image: url('../images/wfaCampsiteWithAvatar.png');
-      background-size: cover;
-      background-position: center center;
-      background-repeat: no-repeat;
-    }
-
-    #aiCharacter {
-      position: absolute;
-      bottom: 0;
-      left: 5%;
-      height: 60vh;
-      z-index: 1;
-    }
-
-    #chatContainer {
-      position: absolute;
-      bottom: 10%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 90vw;
-      max-width: 700px;
-      max-height: 75vh;
-      padding: 15px;
-      border-radius: 12px;
-      background: rgba(0, 0, 0, 0.75);
-      color: white;
-      display: flex;
-      flex-direction: column;
-      z-index: 3;
-    }
-
-    #chatContainer .ai a {
-      color: #4FC3F7;
-      text-decoration: underline;
-    }
-
-    #chatContainer .ai a:hover {
-      color: #81D4FA;
-      text-decoration: none;
-    }
-
-    #chatLog { flex: 1; overflow-y: auto; margin-bottom: 10px; }
-    .message { margin-bottom: 10px; }
-    .ai { text-align: left; color: #a4d4ff; }
-    .user { text-align: right; color: #d1ffd1; }
-
-    #suggestions { margin-bottom: 10px; }
-    .suggestion {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 5px 8px;
-      border-radius: 6px;
-      cursor: pointer;
-      margin: 4px 0;
-      font-size: 0.9rem;
-    }
-    .suggestion:hover { background: rgba(255, 255, 255, 0.25); }
-
-    #userInputContainer { display: flex; gap: 5px; }
-    #userInput {
-      flex: 1;
-      padding: 8px;
-      border: none;
-      border-radius: 6px;
-    }
-
-    #sendBtn {
-      padding: 8px 12px;
-      background: #4caf50;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .message ul,
-    .message ol {
-      padding-left: 20px;
-      margin-bottom: 10px;
-    }
-
-    .message li {
-      margin-left: 10px;
-      margin-bottom: 4px;
-    }
-
-    .fade-out {
-    opacity: 0;
-    transition: opacity 0.5s ease;
-    }
-
-
-
-    #sendBtn:hover { background: #45a049; }
-  </style>
+  <link rel="stylesheet" href="../styles/main.css">
+ 
 </head>
-
 
 <body>
 
 <div id="page">
   <div id="aiAvatar" title="I'm your AI Admissions Counselor!"></div>
+
+<!--new code for slideshows COPY THIS TO OTHER PAGES -->
+  <div id="slideshowContainer" style="display: none;">
+    <div id="slideshowOverlay">
+      <div id="slideBox">
+        <img id="slideImage" src="" alt="Slideshow Image">
+        <div id="slideCaption"></div>
+        <div style="margin-bottom: 20px; display: flex; justify-content: center; gap: 10px;">
+          <button id="prevSlide">⟵ Previous</button>
+          <button id="nextSlide">Next ⟶</button>
+        </div>
+
+        <button id="closeSlideshow">Close</button>
+      </div>
+      
+    </div>
+  </div>
+
+<!-- VIDEO Overlay -->
+<div id="videoOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; z-index: 1000;">
+  <div id="videoContainer" style="text-align: center; color: white;">
+    <video id="videoPlayer" controls style="max-width: 90vw; max-height: 70vh; margin-bottom: 15px;"></video>
+    <div id="videoCaption" style="margin-bottom: 15px;"></div>
+    <button onclick="closeVideo()" style="padding: 8px 14px; background: #ff5555; color: white; border: none; border-radius: 8px; cursor: pointer;">Close</button>
+  </div>
+</div>
+
+
+<!-- SYLLABUS Overlay -->
+<div id="syllabusOverlay" style="display: none;">
+  <div id="syllabusContainer">
+    <div id="syllabusText"></div>
+    <button onclick="closeSyllabus()">Close</button>
+  </div>
+</div>
+
+  <!-- end new code for all pages -->
 
   <div id="chatContainer">
     <div style="margin-bottom: 10px; text-align: right;">
@@ -143,106 +78,6 @@
   </div>
 </div>
 
-<script>
-  const chatLog = document.getElementById('chatLog');
-  const userInput = document.getElementById('userInput');
-  const sendBtn = document.getElementById('sendBtn');
-  const suggestions = document.querySelectorAll('.suggestion');
-
-  const API_URL = 'https://ai-admissions-python-production.up.railway.app/api/query';
-  const PERSONA_ID = 'Adam'; // Update as needed
-
-  function addMessage(text, sender) {
-  const isMobile = window.innerWidth <= 768; // Adjust for your mobile breakpoint
-
-  const msg = document.createElement('div');
-  msg.className = 'message ' + sender;
-
-  if (sender === 'ai' && isMobile) {
-    const details = document.createElement('details');
-    const summary = document.createElement('summary');
-    summary.textContent = "Tap to view answer";
-    details.appendChild(summary);
-
-    const content = document.createElement('div');
-    content.innerHTML = text;
-    details.appendChild(content);
-
-    msg.appendChild(details);
-  } else {
-    msg.innerHTML = text; // Use innerHTML for formatted bullets/tables
-  }
-
-  chatLog.appendChild(msg);
-  chatLog.scrollTop = chatLog.scrollHeight;
-}
-
-
-  async function handleUserMessage(text) {
-  if (!text.trim()) return;
-
-  const keepHistory = document.getElementById('chatHistoryToggle').checked;
-
-  addMessage(text, 'user');
-  userInput.value = '';
-  addMessage("Thinking...", 'ai');
-
-  try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: text,
-        persona_id: PERSONA_ID
-      })
-    });
-
-    const data = await response.json();
-    const messages = chatLog.querySelectorAll('.ai');
-
-    if (messages.length > 0) {
-      messages[messages.length - 1].remove(); // Remove "Thinking..."
-    }
-
-    if (!keepHistory) {
-      const allMessages = chatLog.querySelectorAll('.message.ai, .message.user');
-      allMessages.forEach((msg, index) => {
-        if (index >= 2) {
-          msg.classList.add('fade-out');
-          setTimeout(() => msg.remove(), 500); // Wait for fade to finish
-        }
-      });
-    }
-
-    if (data.response) {
-      const newMessage = document.createElement('div');
-      newMessage.className = 'message ai';
-      newMessage.innerHTML = data.response;
-      chatLog.appendChild(newMessage);
-      chatLog.scrollTop = chatLog.scrollHeight;
-    } else {
-      addMessage(data.error || "Sorry, something went wrong.", 'ai');
-    }
-
-  } catch (err) {
-    addMessage("Fetch error: " + err.message, 'ai');
-  }
-}
-
-
-  sendBtn.addEventListener('click', () => handleUserMessage(userInput.value));
-  userInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleUserMessage(userInput.value);
-  });
-
-  suggestions.forEach(suggestion => {
-    suggestion.addEventListener('click', () => {
-      handleUserMessage(suggestion.textContent);
-    });
-  });
-</script>
-
-
 <!-- Trail Sign Navigation -->
 <img src="../images/wfa_nav.png" usemap="#trailmap" alt="Trail Sign Navigation"
      style="position: absolute; top: 27.5%; right: 82%; width: 150px; z-index: 5;" />
@@ -260,5 +95,6 @@
     imageMapResize();
   });
 </script>-->
+<script src="../scripts/chatLogic.js"></script>
 </body>
 </html>

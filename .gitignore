@@ -3,3 +3,6 @@ cleaned_wfa_faqs.json
 cleaned_wfa_faqs2.json
 faq_embeddings.py
 cleaned_wfa_faqs3.json
+media_embedding.py
+embedding_ai_admissions_1536.py
+embed_ai_media_assets.py
