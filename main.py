@@ -26,8 +26,9 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:8000",  # for local development
-        "https://ai-admissions-python.vercel.app"  # dev site on Vercel
+        "http://localhost:8000",
+        "https://ai-admissions-python.vercel.app",
+        "https://ai-admissions-python-git-dev-sam-coffmans-projects.vercel.app",  # ✅ this is your dev preview domain
     ],
     allow_credentials=True,
     allow_methods=["*"],
