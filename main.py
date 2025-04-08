@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from dotenv import load_dotenv
 from supabase import create_client
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import openai
 import os
 
@@ -18,7 +19,7 @@ if not GLOBAL_PROMPT_KEY:
 # FastAPI setup
 app = FastAPI()
 
-# ✅ CORS must come immediately after FastAPI() to take effect correctly
+# ✅ CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -41,37 +42,49 @@ async def query(request: Request):
     query_text = body.get("query")
     persona_id = body.get("persona_id", "default")
 
-    # 1. Fetch persona + global system prompt
+    # 1. Fetch persona + system prompt
     response = supabase.rpc("get_persona_with_global", {
         "persona_id_input": persona_id,
         "prompt_key": GLOBAL_PROMPT_KEY
     }).execute()
 
     if not response.data:
-        return {"error": f"No data found for persona '{persona_id}' and key '{GLOBAL_PROMPT_KEY}'."}
+        return JSONResponse(
+            content={"error": f"No data found for persona '{persona_id}' and key '{GLOBAL_PROMPT_KEY}'."},
+            headers={
+                "Access-Control-Allow-Origin": "https://ai-admissions-python-git-dev-sam-coffmans-projects.vercel.app",
+                "Access-Control-Allow-Credentials": "true"
+            }
+        )
 
     result = response.data[0]
     full_system_prompt = f"{result['global_prefix']}\n\n{result['system_prompt']}"
 
-    # 2. Generate embedding
+    # 2. Embed query
     embedding_response = openai.embeddings.create(
         model="text-embedding-3-small",
         input=query_text
     )
     query_embedding = embedding_response.data[0].embedding
 
-    # 3. Semantic match
+    # 3. Match chunks
     match_result = supabase.rpc("match_ai_admissions_trainingdata", {
         "query_embedding": query_embedding,
         "match_count": 3
     }).execute()
 
     if not match_result.data:
-        return {"error": "No relevant content found in training data."}
+        return JSONResponse(
+            content={"error": "No relevant content found in training data."},
+            headers={
+                "Access-Control-Allow-Origin": "https://ai-admissions-python-git-dev-sam-coffmans-projects.vercel.app",
+                "Access-Control-Allow-Credentials": "true"
+            }
+        )
 
     context_chunks = "\n\n".join([match["text"] for match in match_result.data])
 
-    # 4. Compose final AI prompt
+    # 4. Build chat
     messages = [
         {"role": "system", "content": full_system_prompt},
         {"role": "user", "content": f"Context:\n{context_chunks}\n\nQuestion: {query_text}"}
@@ -83,7 +96,7 @@ async def query(request: Request):
     )
     raw_response = chat_response.choices[0].message.content
 
-    # 5. Extract trigger (optional)
+    # 5. Visual trigger
     visual_trigger = None
     if "[SHOW_SLIDESHOW]" in raw_response:
         visual_trigger = "slideshow"
@@ -98,10 +111,16 @@ async def query(request: Request):
         .replace("[SHOW_VIDEO]", "") \
         .strip()
 
-    return {
-        "response": cleaned_response,
-        "trigger": visual_trigger
-    }
+    return JSONResponse(
+        content={
+            "response": cleaned_response,
+            "trigger": visual_trigger
+        },
+        headers={
+            "Access-Control-Allow-Origin": "https://ai-admissions-python-git-dev-sam-coffmans-projects.vercel.app",
+            "Access-Control-Allow-Credentials": "true"
+        }
+    )
 
 @app.post("/api/media-match")
 async def media_match(request: Request):
@@ -115,15 +134,35 @@ async def media_match(request: Request):
         .contains("tags", [tag]) \
         .execute()
 
-    return response.data    
+    return JSONResponse(
+        content=response.data,
+        headers={
+            "Access-Control-Allow-Origin": "https://ai-admissions-python-git-dev-sam-coffmans-projects.vercel.app",
+            "Access-Control-Allow-Credentials": "true"
+        }
+    )
 
-from fastapi.responses import JSONResponse
-
-# Optional manual CORS preflight fix
+# ✅ Manual CORS preflight handlers
 @app.options("/api/query")
 async def options_query():
-    return JSONResponse(content={"status": "ok"})
+    return JSONResponse(
+        content={"status": "ok"},
+        headers={
+            "Access-Control-Allow-Origin": "https://ai-admissions-python-git-dev-sam-coffmans-projects.vercel.app",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "*"
+        }
+    )
 
 @app.options("/api/media-match")
 async def options_media():
-    return JSONResponse(content={"status": "ok"})
+    return JSONResponse(
+        content={"status": "ok"},
+        headers={
+            "Access-Control-Allow-Origin": "https://ai-admissions-python-git-dev-sam-coffmans-projects.vercel.app",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "*"
+        }
+    )
