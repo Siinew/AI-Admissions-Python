@@ -15,26 +15,25 @@ GLOBAL_PROMPT_KEY = os.getenv("GLOBAL_PROMPT_KEY")
 if not GLOBAL_PROMPT_KEY:
     raise ValueError("❌ Environment variable 'GLOBAL_PROMPT_KEY' is not set.")
 
-# Set up Supabase + OpenAI
-supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-openai.api_key = OPENAI_API_KEY
-
 # FastAPI setup
 app = FastAPI()
 
-# CORS for dev
+# ✅ CORS must come immediately after FastAPI() to take effect correctly
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:8000",
         "https://ai-admissions-python.vercel.app",
-        "https://ai-admissions-python-git-dev-sam-coffmans-projects.vercel.app",  # ✅ this is your dev preview domain
+        "https://ai-admissions-python-git-dev-sam-coffmans-projects.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Supabase and OpenAI clients
+supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+openai.api_key = OPENAI_API_KEY
 
 @app.post("/api/query")
 async def query(request: Request):
@@ -54,14 +53,14 @@ async def query(request: Request):
     result = response.data[0]
     full_system_prompt = f"{result['global_prefix']}\n\n{result['system_prompt']}"
 
-    # 2. Embed query
+    # 2. Generate embedding
     embedding_response = openai.embeddings.create(
         model="text-embedding-3-small",
         input=query_text
     )
     query_embedding = embedding_response.data[0].embedding
 
-    # 3. Semantic match from training data
+    # 3. Semantic match
     match_result = supabase.rpc("match_ai_admissions_trainingdata", {
         "query_embedding": query_embedding,
         "match_count": 3
@@ -72,7 +71,7 @@ async def query(request: Request):
 
     context_chunks = "\n\n".join([match["text"] for match in match_result.data])
 
-    # 4. AI response with prompt context
+    # 4. Compose final AI prompt
     messages = [
         {"role": "system", "content": full_system_prompt},
         {"role": "user", "content": f"Context:\n{context_chunks}\n\nQuestion: {query_text}"}
@@ -84,7 +83,7 @@ async def query(request: Request):
     )
     raw_response = chat_response.choices[0].message.content
 
-    # 5. Detect visual trigger tag
+    # 5. Extract trigger (optional)
     visual_trigger = None
     if "[SHOW_SLIDESHOW]" in raw_response:
         visual_trigger = "slideshow"
@@ -104,12 +103,11 @@ async def query(request: Request):
         "trigger": visual_trigger
     }
 
-# ✅ New endpoint for dynamic visual content
 @app.post("/api/media-match")
 async def media_match(request: Request):
     body = await request.json()
-    media_type = body.get("type")      # "slideshow", "video", "syllabus"
-    tag = body.get("tag")              # e.g. "wfa_slides", "wfr_intro"
+    media_type = body.get("type")
+    tag = body.get("tag")
 
     response = supabase.table("ai_media_assets") \
         .select("media_url, title, caption") \
