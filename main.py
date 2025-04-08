@@ -115,4 +115,15 @@ async def media_match(request: Request):
         .contains("tags", [tag]) \
         .execute()
 
-    return response.data
+    return response.data    
+
+from fastapi.responses import JSONResponse
+
+# Optional manual CORS preflight fix
+@app.options("/api/query")
+async def options_query():
+    return JSONResponse(content={"status": "ok"})
+
+@app.options("/api/media-match")
+async def options_media():
+    return JSONResponse(content={"status": "ok"})
