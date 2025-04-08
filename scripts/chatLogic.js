@@ -8,6 +8,7 @@ const API_URL = 'https://github-dev-for-ai-admissions-production.up.railway.app/
 
 const PERSONA_ID = 'Adam';
 
+
 function addMessage(text, sender) {
   const isMobile = window.innerWidth <= 768;
   const msg = document.createElement('div');
