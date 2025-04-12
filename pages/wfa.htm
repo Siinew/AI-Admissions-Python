@@ -5,96 +5,131 @@
   <title>WFA Admissions Counselor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="../styles/main.css">
- 
 </head>
-
 <body>
+  <div id="page">
+    <div id="aiAvatar" title="I'm your AI Admissions Counselor!"></div>
 
-<div id="page">
-  <div id="aiAvatar" title="I'm your AI Admissions Counselor!"></div>
+    <!-- Slideshow Overlay -->
+    <div id="slideshowContainer" style="display: none;">
+      <div id="slideshowOverlay">
+        <div id="slideBox">
+          <img id="slideImage" src="" alt="Slideshow Image">
+          <div id="slideCaption"></div>
+          <div style="margin-bottom: 20px; display: flex; justify-content: center; gap: 10px;">
+            <button id="prevSlide">⟵ Previous</button>
+            <button id="nextSlide">Next ⟶</button>
+          </div>
+          <button id="closeSlideshow">Close</button>
+        </div>
+      </div>
+    </div>
 
-<!--new code for slideshows COPY THIS TO OTHER PAGES -->
-  <div id="slideshowContainer" style="display: none;">
-    <div id="slideshowOverlay">
-      <div id="slideBox">
-        <img id="slideImage" src="" alt="Slideshow Image">
-        <div id="slideCaption"></div>
-        <div style="margin-bottom: 20px; display: flex; justify-content: center; gap: 10px;">
-          <button id="prevSlide">⟵ Previous</button>
-          <button id="nextSlide">Next ⟶</button>
+    <!-- Video Overlay -->
+    <div id="videoOverlay" style="display: none;">
+      <div id="videoContainer">
+        <video id="videoPlayer" controls></video>
+        <div id="videoCaption"></div>
+        <button id="closeVideo">Close</button>
+      </div>
+    </div>
+
+    <!-- Syllabus Overlay -->
+    <div id="syllabusOverlay" style="display: none;">
+      <div id="syllabusContainer">
+        <div id="syllabusText"></div>
+        <button onclick="closeSyllabus()">Close</button>
+      </div>
+    </div>
+
+    <!-- Upcoming Classes Overlay -->
+    <div id="upcomingOverlay" style="display: none;">
+      <div id="upcomingContainer">
+        <div id="upcomingList"></div>
+        <button onclick="closeUpcoming()">Close</button>
+      </div>
+    </div>
+
+    <!-- Main Chat Interface -->
+    <div id="chatContainer">
+      <!-- History Toggle -->
+      <div style="margin-bottom: 10px; text-align: right;">
+        <label style="font-size: 0.85rem;">
+          <input type="checkbox" id="chatHistoryToggle" checked />
+          Keep chat history
+        </label>
+      </div>
+
+      <!-- Initial Greeting -->
+      <div id="chatLog">
+        <div class="message ai">
+          Hi there! I'm your AI Admissions Counselor for our Wilderness First Aid Certification courses at 
+          <a href="https://herbalmedics.academy" target="_blank">Herbal Medics Academy</a>. 😊
+        </div>
+        <div class="message ai">How can I help you today?</div>
+      </div>
+
+      <!-- Suggested Questions -->
+      <div id="suggestions">
+        <div class="suggestion">What’s the difference between WFA and AWFA?</div>
+        <div class="suggestion">How do I sign up for a course?</div>
+        <div class="suggestion">Can you compare WFA vs WFR visually?</div>
+      </div>
+
+      <!-- User Input -->
+      <div id="userInputContainer">
+        <input type="text" id="userInput" placeholder="Or type your own question..." />
+        <button id="sendBtn">Send</button>
+      </div>
+
+      <!-- Visual Option Panel -->
+      <div id="mediaTogglePanel" class="always-visible">
+        <!-- Upcoming Classes Button -->
+        <div style="margin-bottom: 16px;">
+          <button id="showUpcomingBtn">📅 Show Upcoming Classes</button>
         </div>
 
-        <button id="closeSlideshow">Close</button>
+        <!-- Separator -->
+        <div style="text-align: center; margin: 10px 0; font-weight: bold; color: white;">— OR —</div>
+
+        <!-- Program + Media Selection -->
+        <div style="color: white; margin-bottom: 6px;">
+          Choose a program and what you'd like to see (slides, video, syllabus)...
+        </div>
+
+        <div class="radio-group">
+          <label><input type="radio" name="program" value="wfa" checked /> WFA</label>
+          <label><input type="radio" name="program" value="awfa" /> AWFA</label>
+          <label><input type="radio" name="program" value="wfr" /> WFR</label>
+          <label><input type="radio" name="program" value="home" /> Austere</label>
+        </div>
+
+        <div style="color: white; margin: 10px 0;">Choose what you want to see:</div>
+        <div class="radio-group">
+          <label><input type="radio" name="mediaType" value="slideshow" checked /> Slideshow</label>
+          <label><input type="radio" name="mediaType" value="video" /> Video</label>
+          <label><input type="radio" name="mediaType" value="syllabus" /> Syllabus</label>
+        </div>
+
+        <button id="loadSelectedVisuals" style="margin-top: 10px;">🎬 Load Selected Media</button>
       </div>
-      
     </div>
+
+    <!-- Trail Sign Navigation -->
+    <img src="../images/wfa_nav.png" usemap="#trailmap" alt="Trail Sign Navigation"
+         style="position: absolute; top: 27.5%; left: 5%; width: 150px; z-index: 5;" />
+    <map name="trailmap">
+      <area shape="rect" coords="10,25,140,35" alt="HOME" href="../index.htm">
+      <area shape="rect" coords="10,50,140,70" alt="AWFA" href="awfa.htm">
+      <area shape="rect" coords="10,75,140,100" alt="WFR" href="wfr.htm">
+      <area shape="rect" coords="10,100,140,120" alt="AUSTERE" href="austere.htm">
+      <area shape="rect" coords="10,120,140,160" alt="HMA" href="https://herbalmedics.academy" target="_blank">
+    </map>
   </div>
 
-<!-- VIDEO Overlay -->
-<div id="videoOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; z-index: 1000;">
-  <div id="videoContainer" style="text-align: center; color: white;">
-    <video id="videoPlayer" controls style="max-width: 90vw; max-height: 70vh; margin-bottom: 15px;"></video>
-    <div id="videoCaption" style="margin-bottom: 15px;"></div>
-    <button onclick="closeVideo()" style="padding: 8px 14px; background: #ff5555; color: white; border: none; border-radius: 8px; cursor: pointer;">Close</button>
-  </div>
-</div>
+  <!-- Logic -->
+  <script src="../scripts/sessionLogic.js"></script>
+  <script src="../scripts/chatLogic.js"></script>  
 
-
-<!-- SYLLABUS Overlay -->
-<div id="syllabusOverlay" style="display: none;">
-  <div id="syllabusContainer">
-    <div id="syllabusText"></div>
-    <button onclick="closeSyllabus()">Close</button>
-  </div>
-</div>
-
-  <!-- end new code for all pages -->
-
-  <div id="chatContainer">
-    <div style="margin-bottom: 10px; text-align: right;">
-      <label style="font-size: 0.85rem;">
-        <input type="checkbox" id="chatHistoryToggle" checked />
-        Keep chat history
-      </label>
-    </div>
-    
-    <div id="chatLog">
-      <div class="message ai">Hi there! I'm your AI Admissions Counselor for our Wilderness First Aid Certification courses at 
-        <a href="https://herbalmedics.academy" target="_blank"> Herbal Medics Academy</a>. 😊</div>
-      <div class="message ai">How can I help you today?</div>
-    </div>
-
-    <div id="suggestions">
-      <div class="suggestion">What’s the difference between WFA and AWFA?</div>
-      <div class="suggestion">How do I sign up for a course?</div>
-      <div class="suggestion">Can you compare WFA vs WFR visually?</div>
-      <div class="suggestion">Is this course right for me?</div>
-    </div>
-
-    <div id="userInputContainer">
-      <input type="text" id="userInput" placeholder="Or type your own question..." />
-      <button id="sendBtn">Send</button>
-    </div>
-  </div>
-</div>
-
-<!-- Trail Sign Navigation -->
-<img src="../images/wfa_nav.png" usemap="#trailmap" alt="Trail Sign Navigation"
-     style="position: absolute; top: 27.5%; right: 82%; width: 150px; z-index: 5;" />
-
-<map name="trailmap">
-  <area shape="rect" coords="10,25,140,35" alt="HOME" href="../index.htm">
-  <area shape="rect" coords="10,50,140,70" alt="AWFA" href="awfa.htm">
-  <area shape="rect" coords="10,75,140,100" alt="WFR" href="wfr.htm">
-  <area shape="rect" coords="10,100,140,120" alt="AUSTERE" href="austere.htm">
-  <area shape="rect" coords="10,120,140,160" alt="HMA" href="https://herbalmedics.academy" target="_blank">
-</map>
-<!--<script src="https://unpkg.com/image-map-resizer@1.0.10/js/imageMapResizer.min.js"></script>
-<script>
-  window.addEventListener('load', function () {
-    imageMapResize();
-  });
-</script>-->
-<script src="../scripts/chatLogic.js"></script>
 </body>
 </html>

@@ -1,177 +1,121 @@
+// 🔗 Must be included after sessionLogic.js
+
+const API_URL = 'http://localhost:8001/api/query';
+const MEDIA_API_URL = 'http://localhost:8001/api/media-match';
+const PERSONA_ID = 'Adam';
+
 const chatLog = document.getElementById('chatLog');
 const userInput = document.getElementById('userInput');
 const sendBtn = document.getElementById('sendBtn');
 const suggestions = document.querySelectorAll('.suggestion');
 
-//const API_URL = 'https://ai-admissions-python-production.up.railway.app/api/query'; this is the production URL
-const API_URL = 'https://github-dev-for-ai-admissions-production.up.railway.app/api/query'; //DEV URL
+// Event Listeners
+sendBtn.addEventListener('click', () => handleUserMessage(userInput.value));
+userInput.addEventListener('keypress', e => {
+  if (e.key === 'Enter') handleUserMessage(userInput.value);
+});
+suggestions.forEach(s => s.addEventListener('click', () => handleUserMessage(s.textContent)));
 
-const PERSONA_ID = 'Adam';
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("🔧 DOM fully loaded");
 
+  document.getElementById("closeSlideshow")?.addEventListener("click", closeSlideshow);
+  document.getElementById("nextSlide")?.addEventListener("click", nextSlide);
+  document.getElementById("prevSlide")?.addEventListener("click", prevSlide);
+  document.getElementById("closeVideo")?.addEventListener("click", closeVideo);
+  document.getElementById("showUpcomingBtn")?.addEventListener("click", fetchUpcomingClasses);
+  document.getElementById("closeSyllabus")?.addEventListener("click", closeSyllabus);
+});
 
+// Message handling
 function addMessage(text, sender) {
-  const isMobile = window.innerWidth <= 768;
   const msg = document.createElement('div');
   msg.className = 'message ' + sender;
-
-  if (sender === 'ai' && isMobile) {
-    const details = document.createElement('details');
-    const summary = document.createElement('summary');
-    summary.textContent = "Tap to view answer";
-    details.appendChild(summary);
-
-    const content = document.createElement('div');
-    content.innerHTML = text;
-    details.appendChild(content);
-
-    msg.appendChild(details);
-  } else {
-    msg.innerHTML = text;
-  }
-
+  msg.innerHTML = text;
   chatLog.appendChild(msg);
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
 async function handleUserMessage(text) {
   if (!text.trim()) return;
-
-  const keepHistory = document.getElementById('chatHistoryToggle').checked;
-
   addMessage(text, 'user');
   userInput.value = '';
   addMessage("Thinking...", 'ai');
 
+  const metadataOnce = getMetadataPayloadOnce();
+
   try {
-    const response = await fetch(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: text, persona_id: PERSONA_ID })
+      body: JSON.stringify({
+        query: text,
+        persona_id: PERSONA_ID,
+        session_id: SESSION_ID,
+        metadata: metadataOnce
+      })
     });
 
-    const data = await response.json();
+    const data = await res.json();
+    const aiMsgs = chatLog.querySelectorAll('.message.ai');
+    if (aiMsgs.length) aiMsgs[aiMsgs.length - 1].remove();
 
-    const messages = chatLog.querySelectorAll('.ai');
-    if (messages.length > 0) messages[messages.length - 1].remove();
-
-    if (!keepHistory) {
-      const allMessages = chatLog.querySelectorAll('.message.ai, .message.user');
-      allMessages.forEach((msg, index) => {
-        if (index >= 2) {
-          msg.classList.add('fade-out');
-          setTimeout(() => msg.remove(), 500);
-        }
-      });
-    }
-
-    if (data.response) {
-      let cleaned = data.response;
-
-      const playMatch = cleaned.match(/\[SHOW_(SLIDESHOW|VIDEO|SYLLABUS):([^\]]+)\]/);
-      if (playMatch) {
-        const type = playMatch[1];
-        const tag = playMatch[2];
-        cleaned = cleaned.replace(playMatch[0], '').trim();
-        addMessage(cleaned, 'ai');
-        await loadDynamicContent(type, tag);
-        return;
-      }
-
-      const offerMatch = cleaned.match(/\[SHOW_OFFER:([a-z,]+):([^\]]+)\]/i);
-      if (offerMatch) {
-        const typesRaw = offerMatch[1];
-        const tag = offerMatch[2];
-        const types = typesRaw.toUpperCase().split(',');
-
-        cleaned = cleaned.replace(offerMatch[0], '').trim();
-
-        const container = document.createElement('div');
-        container.className = 'message ai';
-
-        const content = document.createElement('div');
-        content.innerHTML = cleaned;
-
-        const buttonWrapper = document.createElement('div');
-        buttonWrapper.style.marginTop = '10px';
-        buttonWrapper.style.display = 'flex';
-        buttonWrapper.style.gap = '10px';
-        buttonWrapper.style.flexWrap = 'wrap';
-
-        types.forEach(type => {
-          const btn = document.createElement('button');
-          btn.textContent = type.charAt(0) + type.slice(1).toLowerCase();
-          btn.className = 'media-toggle-btn';
-          btn.onclick = () => {
-            btn.disabled = true;
-            loadDynamicContent(type, tag);
-          };
-          buttonWrapper.appendChild(btn);
-        });
-
-        container.appendChild(content);
-        container.appendChild(buttonWrapper);
-        chatLog.appendChild(container);
-        chatLog.scrollTop = chatLog.scrollHeight;
-        return;
-      }
-
-      addMessage(cleaned, 'ai');
-    } else {
-      addMessage(data.error || "Sorry, something went wrong.", 'ai');
-    }
+    if (data.response) addMessage(data.response, 'ai');
   } catch (err) {
     addMessage("Fetch error: " + err.message, 'ai');
   }
 }
 
-sendBtn.addEventListener('click', () => handleUserMessage(userInput.value));
-userInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') handleUserMessage(userInput.value);
-});
-suggestions.forEach(suggestion => {
-  suggestion.addEventListener('click', () => {
-    handleUserMessage(suggestion.textContent);
-  });
-});
-
-async function loadDynamicContent(type, key) {
+// Visual media fetch
+async function fetchMedia(type, tag) {
   try {
-    const response = await fetch("https://ai-admissions-python-production.up.railway.app/api/media-match", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: type, tag: key })
+    const res = await fetch(MEDIA_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, tag })
     });
 
-    const result = await response.json();
-    if (!result || result.length === 0) {
-      addMessage("Sorry, I couldn’t find the requested visuals.", 'ai');
+    const media = await res.json();
+    if (!Array.isArray(media) || media.length === 0) {
+      addMessage("No visuals found for that category.", 'ai');
       return;
     }
 
     switch (type) {
-      case "SLIDESHOW":
-        startSlideshow(result);
+      case 'SLIDESHOW':
+        startSlideshow(media.map(item => ({ src: item.media_url, caption: item.caption })));
         break;
-      case "VIDEO":
-        const video = result[0];
+      case 'VIDEO':
+        const video = media[0];
         playVideoOverlay(video.media_url, video.caption);
         break;
-      case "SYLLABUS":
-        const syllabus = result[0];
-        showSyllabus(syllabus.caption.split("\n"));
+      case 'SYLLABUS':
+        const syllabusData = media[0];
+        try {
+          const raw = syllabusData.syllabus_json;
+          const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          if (Array.isArray(parsed)) {
+            showSyllabus(parsed, syllabusData.caption);
+          } else {
+            addMessage("Syllabus format error: Not a valid array.", 'ai');
+          }
+        } catch (err) {
+          console.error("❌ Failed to parse syllabus JSON:", err);
+          addMessage("Syllabus format error: Could not parse data.", 'ai');
+        }
         break;
       default:
-        console.warn("Unknown content type:", type);
+        addMessage("Unknown media type.", 'ai');
     }
   } catch (err) {
-    console.error("❌ Error fetching visual media:", err);
-    addMessage("There was a problem loading visuals.", 'ai');
+    console.error("❌ Media fetch error:", err);
+    addMessage("Failed to load visual content.", 'ai');
   }
 }
 
+// Slideshow
 let currentSlideIndex = 0;
 let currentSlides = [];
-let slideshowTimer = null;
 
 function startSlideshow(slides) {
   currentSlides = slides;
@@ -209,17 +153,11 @@ function prevSlide() {
 
 function closeSlideshow() {
   document.getElementById("slideshowContainer").style.display = "none";
-  currentSlideIndex = 0;
-  currentSlides = [];
-  if (slideshowTimer) {
-    clearInterval(slideshowTimer);
-    slideshowTimer = null;
-  }
 }
 
+// Video
 function playVideoOverlay(videoSrc, captionText) {
   const overlay = document.getElementById("videoOverlay");
-  const container = document.getElementById("videoContainer");
   const video = document.getElementById("videoPlayer");
   const caption = document.getElementById("videoCaption");
 
@@ -235,9 +173,49 @@ function closeVideo() {
   document.getElementById("videoOverlay").style.display = "none";
 }
 
-function showSyllabus(lines) {
+// Syllabus
+function showSyllabus(items, caption) {
   const container = document.getElementById("syllabusText");
-  container.innerHTML = lines.map(line => `<div>• ${line}</div>`).join("");
+  container.innerHTML = "";
+
+  if (caption) {
+    const title = document.createElement('h3');
+    title.textContent = caption;
+    title.style.marginBottom = '16px';
+    container.appendChild(title);
+  }
+
+  items.forEach(item => {
+    const panel = document.createElement('div');
+    panel.className = 'syllabus-panel';
+
+    const header = document.createElement('div');
+    header.className = 'syllabus-header';
+
+    const icon = document.createElement('span');
+    icon.className = 'toggle-icon';
+    icon.textContent = '+';
+
+    const titleText = document.createElement('span');
+    titleText.textContent = item.title || "Untitled";
+
+    header.appendChild(titleText);
+    header.appendChild(icon);
+
+    const body = document.createElement('div');
+    body.className = 'syllabus-body';
+    body.textContent = item.description || "";
+
+    header.addEventListener('click', () => {
+      const expanded = panel.classList.toggle('expanded');
+      icon.textContent = expanded ? '–' : '+';
+    });
+
+    panel.appendChild(header);
+    panel.appendChild(body);
+    container.appendChild(panel);
+  });
+
   document.getElementById("syllabusOverlay").style.display = "flex";
 }
 
@@ -245,6 +223,54 @@ function closeSyllabus() {
   document.getElementById("syllabusOverlay").style.display = "none";
 }
 
-document.getElementById("closeSlideshow").addEventListener("click", closeSlideshow);
-document.getElementById("nextSlide").addEventListener("click", nextSlide);
-document.getElementById("prevSlide").addEventListener("click", prevSlide);
+// Upcoming classes
+async function fetchUpcomingClasses() {
+  try {
+    const res = await fetch('http://localhost:8001/api/upcoming-classes');
+    const data = await res.json();
+    renderUpcomingOverlay(data);
+  } catch (err) {
+    console.error("Failed to load upcoming classes:", err);
+  }
+}
+
+function renderUpcomingOverlay(classes) {
+  const list = document.getElementById("upcomingList");
+  list.innerHTML = '';
+
+  if (!classes.length) {
+    list.innerHTML = '<p>No upcoming classes found.</p>';
+  } else {
+    classes.forEach(cls => {
+      const div = document.createElement("div");
+      div.className = "upcoming-class";
+      div.innerHTML = `
+        <h4>${cls.course_name}</h4>
+        <p><strong>Location:</strong> ${cls.course_location}<br>
+           <strong>Length:</strong> ${cls.course_length}<br>
+           <strong>Start Date:</strong> ${new Date(cls.start_date).toLocaleDateString()}</p>
+        <a href="${cls.registration_link}" target="_blank">Register & Info</a>
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  document.getElementById("upcomingOverlay").style.display = "flex";
+}
+
+function closeUpcoming() {
+  document.getElementById("upcomingOverlay").style.display = "none";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const loadBtn = document.getElementById("loadSelectedVisuals");
+  if (loadBtn) {
+    loadBtn.addEventListener("click", () => {
+      const program = document.querySelector('input[name="program"]:checked')?.value;
+      const mediaType = document.querySelector('input[name="mediaType"]:checked')?.value;
+      if (program && mediaType) {
+        fetchMedia(mediaType.toUpperCase(), program);
+      }
+    });
+  }
+});

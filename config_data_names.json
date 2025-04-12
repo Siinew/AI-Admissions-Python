@@ -1,0 +1,6 @@
+{
+    "slideshow": { "media_type": "image", "max_results": 5 },
+    "video": { "media_type": "video", "max_results": 1 },
+    "syllabus": { "media_type": "syllabus", "max_results": 1 }
+  }
+  
